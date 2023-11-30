@@ -12,7 +12,10 @@
   },
   "dependencies": {
     "forma-embedded-view-sdk": "^0.34.0",
-    "preact": "^10.17.1"
+    "preact": "^10.17.1",
+    "react-simple-chatbot": "^0.6.1",
+    "styled-components": "^6.1.1",
+    "three": "^0.158.0"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.5.0",
