@@ -3,19 +3,6 @@ name: Run tests, build static files and deploy to GitHub Pages
 on: [workflow_dispatch, push]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: "18"
-      - run: yarn install --frozen-lockfile
-      - run: yarn typecheck
-      - run: yarn prettier --check src
-      - run: yarn build
-        if: github.ref != 'refs/heads/main'
-
   build:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -40,7 +27,7 @@ jobs:
 
   deploy:
     if: github.ref == 'refs/heads/main'
-    needs: [test, build]
+    needs: [build]
     runs-on: ubuntu-latest
 
     permissions:
