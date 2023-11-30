@@ -1,8 +1,8 @@
-import { useEffect, useState } from "preact/hooks";
+import { useCallback, useEffect, useState } from "preact/hooks";
 import ChatBot from "react-simple-chatbot";
-import * as THREE from "three";
-import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 import { Forma } from "forma-embedded-view-sdk/auto";
+import * as THREE from "three";
+import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 
 function base64ToArrayBuffer(base64: string) {
   const binaryString = atob(base64);
@@ -14,105 +14,58 @@ function base64ToArrayBuffer(base64: string) {
 }
 window.Forma = Forma;
 
-const SHOULD_MOCK = true;
-
-// @ts-ignore
-window.THREE = THREE;
-// @ts-ignore
-window.GLTFExporter = GLTFExporter;
+const SHOULD_MOCK = false;
 
 const mockResponse = {
-  id: "chatcmpl-8QYMoi5XQgGiAWolceM6DQsa7Bjjr",
+  id: "chatcmpl-8QZiU1aiJ0jhVkghlKNTMqID7IiPH",
   object: "chat.completion",
-  created: 1701339326,
+  created: 1701344514,
   model: "gpt-3.5-turbo-0613",
   choices: [
     {
       index: 0,
       message: {
         role: "assistant",
-        content: `\`\`\`javascript
-window.generate = async function() {
-  const script = document.createElement('script');
-  script.src = 'https://unpkg.com/three@0.132.2/build/three.min.js';
-  document.head.appendChild(script);
-
-  await new Promise((resolve) => {
-    script.onload = resolve;
-  });
-
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-  
-  const renderer = new THREE.WebGLRenderer();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  document.body.appendChild(renderer.domElement);
-
-  const geometry = new THREE.BoxGeometry();
-  const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-  const box = new THREE.Mesh(geometry, material);
-  scene.add(box);
-
-  camera.position.z = 5;
-
-  function animate() {
-    requestAnimationFrame(animate);
-    box.rotation.x += 0.01;
-    box.rotation.y += 0.01;
-    renderer.render(scene, camera);
-  }
-
-  animate();
-
-  const scriptGLTF = document.createElement('script');
-  scriptGLTF.src = 'https://unpkg.com/three@0.132.2/examples/js/exporters/GLTFExporter.js';
-  document.head.appendChild(scriptGLTF);
-
-  await new Promise((resolve) => {
-    scriptGLTF.onload = resolve;
-  });
-
-  const gltfExporter = new THREE.GLTFExporter();
-  return new Promise((resolve, reject) => {
-    gltfExporter.parse(scene, (result) => {
-      const glbData = result;
-      const blob = new Blob([glbData], { type: 'model/gltf-binary' });
-      const reader = new FileReader();
-      reader.readAsDataURL(blob);
-      reader.onloadend = function () {
-        const base64data = reader.result;
-        resolve(base64data);
-      };
-    }, { binary: true });
-  });
-};\`\`\`
-`,
+        content:
+          "Certainly! Here's an example of how you can create a JavaScript function using Three.js and GLTFExporter to build a `<canvas>` in glb format and return it as a base64 encoded string:\n\n```javascript\nwindow.generate = function() {\n  // Create a scene and add objects\n\n  const scene = new THREE.Scene();\n\n  const geometry = new THREE.BoxGeometry(1, 1, 1);\n  const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });\n  const cube = new THREE.Mesh(geometry, material);\n  scene.add(cube);\n\n  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);\n  camera.position.z = 5;\n\n  // Create a renderer\n\n  const renderer = new THREE.WebGLRenderer({ antialias: true });\n  renderer.setSize(window.innerWidth, window.innerHeight);\n  document.body.appendChild(renderer.domElement);\n\n  // Create a GLTFExporter instance and export the scene\n\n  const exporter = new THREE.GLTFExporter();\n\n  return new Promise((resolve) => {\n    exporter.parse(scene, (glb) => {\n      // Encode the glb as base64\n\n      const glbString = JSON.stringify(glb);\n      const glbBytes = new TextEncoder().encode(glbString);\n      const glbBase64 = btoa(String.fromCharCode(...glbBytes));\n\n      resolve(glbBase64);\n    });\n  });\n};\n```\n\nYou can call this function `generate()` to get a base64 encoded string of the scene in glb format. Note that this function returns a promise, so you might need to handle it accordingly. Also, make sure you have the necessary imports and dependencies (e.g., Three.js, GLTFExporter) set up in your project.",
       },
       finish_reason: "stop",
     },
   ],
   usage: {
-    prompt_tokens: 49,
-    completion_tokens: 394,
-    total_tokens: 443,
+    prompt_tokens: 72,
+    completion_tokens: 369,
+    total_tokens: 441,
   },
   system_fingerprint: null,
 };
 
 function renderPrompt(prompt: string) {
-  return `can you create a javascript function to build a ${prompt} in glb format using threejs and return it as a base64 encoded string?
-   assume that THREE and GLTFExporter is already imported and available in the global scope window
-   Can put the function on window.generate`;
+  return `
+   Can you create a function called generate in javascript build a ${prompt} in glb format using threejs and return the glb as a base64 encoded string?
+   Make THREE and GTLFExporter parameters to the generate function
+
+   You do not need to render just export the scene :) 
+   Do not add any usage examples.
+   
+   Expose the function on window.generate
+   `;
 }
 
 function extractCode(response: any) {
   const [choice] = response.choices;
-  return choice?.message.content.split("```")[1].replace("javascript", "");
+  const regex = /```(?:javascript|js)\n([\s\S]+?)```/g;
+
+  return choice?.message.content
+    .match(regex)[0]
+    .replace("```javascript", "")
+    .replace("```", "")
+    .replace("```js", "");
 }
 
 async function callChatGPT(prompt: string) {
   const apiUrl = "https://api.openai.com/v1/chat/completions";
-  const apiKey = "YOUR_API_KEY";
+  const apiKey = "API_KEY";
   const messages = [
     { role: "system", content: "What do you want to draw?" },
     { role: "user", content: prompt },
@@ -148,7 +101,7 @@ async function callChatGPT(prompt: string) {
     eval(code);
 
     //@ts-ignore
-    const raw = await window.generate();
+    const raw = await window.generate(THREE, GLTFExporter);
     const glb = base64ToArrayBuffer(raw.replace("data:model/gltf-binary;base64,", ""));
 
     Forma.render.glb.add({ glb });
